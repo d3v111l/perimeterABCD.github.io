@@ -40,10 +40,10 @@
       <a-sphere id="markerD" color="yellow" radius="0.05" position="0 0 0"></a-sphere>
     </a-marker>
 
-    <a-entity id="lineAB" line="start: 0 0 0; end: 0 0 0; color: white;" visible="false"></a-entity>
-    <a-entity id="lineBC" line="start: 0 0 0; end: 0 0 0; color: white;" visible="false"></a-entity>
-    <a-entity id="lineCD" line="start: 0 0 0; end: 0 0 0; color: white;" visible="false"></a-entity>
-    <a-entity id="lineDA" line="start: 0 0 0; end: 0 0 0; color: white;" visible="false"></a-entity>
+    <a-entity id="lineAB" visible="false"></a-entity>
+    <a-entity id="lineBC" visible="false"></a-entity>
+    <a-entity id="lineCD" visible="false"></a-entity>
+    <a-entity id="lineDA" visible="false"></a-entity>
   </a-scene>
 
   <div id="info">
@@ -146,11 +146,7 @@
       }
 
       function setLine(lineEntity, start, end) {
-        lineEntity.setAttribute('line', {
-          start: `${start.x} ${start.y} ${start.z}`,
-          end: `${end.x} ${end.y} ${end.z}`,
-          color: 'white'
-        });
+        lineEntity.setAttribute('line', `start: ${start.x} ${start.y} ${start.z}; end: ${end.x} ${end.y} ${end.z}; color: white`);
       }
     });
   </script>
