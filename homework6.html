@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Чотирикутник AR.js з маркерами A,B,C,D</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+  <style>
+    #info {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 10px;
+      max-width: 320px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body style="margin:0; overflow:hidden;">
+  <a-scene embedded arjs="trackingMethod: best; sourceType: webcam;">
+    <a-camera position="0 0 0" look-controls-enabled="false"></a-camera>
+
+    <a-marker type="pattern" url="./patterns/patt.A">
+      <a-sphere id="markerA" color="red" radius="0.05" position="0 0 0"></a-sphere>
+    </a-marker>
+
+    <a-marker type="pattern" url="./patterns/patt.B">
+      <a-sphere id="markerB" color="green" radius="0.05" position="0 0 0"></a-sphere>
+    </a-marker>
+
+    <a-marker type="pattern" url="./patterns/patt.C">
+      <a-sphere id="markerC" color="blue" radius="0.05" position="0 0 0"></a-sphere>
+    </a-marker>
+
+    <a-marker type="pattern" url="./patterns/patt.D">
+      <a-sphere id="markerD" color="yellow" radius="0.05" position="0 0 0"></a-sphere>
+    </a-marker>
+
+    <a-entity id="lineAB" line="start: 0 0 0; end: 0 0 0; color: white;" visible="false"></a-entity>
+    <a-entity id="lineBC" line="start: 0 0 0; end: 0 0 0; color: white;" visible="false"></a-entity>
+    <a-entity id="lineCD" line="start: 0 0 0; end: 0 0 0; color: white;" visible="false"></a-entity>
+    <a-entity id="lineDA" line="start: 0 0 0; end: 0 0 0; color: white;" visible="false"></a-entity>
+  </a-scene>
+
+  <div id="info">
+    <div>Периметр: <span id="perimeter">-</span></div>
+    <div>Площа ABC: <span id="area-abc">-</span></div>
+    <div>Площа ABD: <span id="area-abd">-</span></div>
+    <div>Площа ACD: <span id="area-acd">-</span></div>
+    <div>Площа BCD: <span id="area-bcd">-</span></div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const markerA = document.querySelector('#markerA');
+      const markerB = document.querySelector('#markerB');
+      const markerC = document.querySelector('#markerC');
+      const markerD = document.querySelector('#markerD');
+
+      const lineAB = document.querySelector('#lineAB');
+      const lineBC = document.querySelector('#lineBC');
+      const lineCD = document.querySelector('#lineCD');
+      const lineDA = document.querySelector('#lineDA');
+
+      let visible = { A: false, B: false, C: false, D: false };
+
+      function getWorldPosition(entity) {
+        const pos = new THREE.Vector3();
+        entity.object3D.getWorldPosition(pos);
+        return pos;
+      }
+
+      ['markerA','markerB','markerC','markerD'].forEach(id => {
+        const entity = document.querySelector(`#${id}`);
+        entity.addEventListener('markerFound', () => {
+          visible[id.slice(-1)] = true;
+          update();
+        });
+        entity.addEventListener('markerLost', () => {
+          visible[id.slice(-1)] = false;
+          update();
+        });
+      });
+
+      setInterval(update, 100);
+
+      function update() {
+        if (visible.A && visible.B && visible.C && visible.D) {
+          lineAB.setAttribute('visible', true);
+          lineBC.setAttribute('visible', true);
+          lineCD.setAttribute('visible', true);
+          lineDA.setAttribute('visible', true);
+
+          const posA = getWorldPosition(markerA);
+          const posB = getWorldPosition(markerB);
+          const posC = getWorldPosition(markerC);
+          const posD = getWorldPosition(markerD);
+
+          setLine(lineAB, posA, posB);
+          setLine(lineBC, posB, posC);
+          setLine(lineCD, posC, posD);
+          setLine(lineDA, posD, posA);
+
+          const dist = (p1, p2) => p1.distanceTo(p2);
+          const ab = dist(posA, posB);
+          const bc = dist(posB, posC);
+          const cd = dist(posC, posD);
+          const da = dist(posD, posA);
+          const perimeter = ab + bc + cd + da;
+
+          function triangleArea(p1, p2, p3) {
+            const a = dist(p1, p2);
+            const b = dist(p2, p3);
+            const c = dist(p3, p1);
+            const s = (a + b + c) / 2;
+            return Math.sqrt(s * (s - a) * (s - b) * (s - c));
+          }
+
+          const areaABC = triangleArea(posA, posB, posC);
+          const areaABD = triangleArea(posA, posB, posD);
+          const areaACD = triangleArea(posA, posC, posD);
+          const areaBCD = triangleArea(posB, posC, posD);
+
+          document.getElementById('perimeter').textContent = perimeter.toFixed(3);
+          document.getElementById('area-abc').textContent = areaABC.toFixed(3);
+          document.getElementById('area-abd').textContent = areaABD.toFixed(3);
+          document.getElementById('area-acd').textContent = areaACD.toFixed(3);
+          document.getElementById('area-bcd').textContent = areaBCD.toFixed(3);
+
+        } else {
+          lineAB.setAttribute('visible', false);
+          lineBC.setAttribute('visible', false);
+          lineCD.setAttribute('visible', false);
+          lineDA.setAttribute('visible', false);
+
+          document.getElementById('perimeter').textContent = '-';
+          document.getElementById('area-abc').textContent = '-';
+          document.getElementById('area-abd').textContent = '-';
+          document.getElementById('area-acd').textContent = '-';
+          document.getElementById('area-bcd').textContent = '-';
+        }
+      }
+
+      function setLine(lineEntity, start, end) {
+        lineEntity.setAttribute('line', {
+          start: `${start.x} ${start.y} ${start.z}`,
+          end: `${end.x} ${end.y} ${end.z}`,
+          color: 'white'
+        });
+      }
+    });
+  </script>
+</body>
+</html>
